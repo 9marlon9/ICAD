@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICAD — Índice de Apropiación Digital</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e14;
+    --surface: #13151e;
+    --surface2: #1a1d29;
+    --border: #252836;
+    --accent-a: #4fffb0;
+    --accent-b: #7b61ff;
+    --accent-c: #ff6b6b;
+    --accent-d: #ffd166;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --dim: #9ca3af;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 80% 20%, rgba(75,255,176,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 20% 80%, rgba(123,97,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  header {
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent-a);
+    background: rgba(79,255,176,0.08);
+    border: 1px solid rgba(79,255,176,0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent-a); }
+
+  .subtitle {
+    color: var(--dim);
+    font-size: 1rem;
+    font-weight: 300;
+    max-width: 520px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+  }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 999px;
+    height: 4px;
+    margin-bottom: 48px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-b), var(--accent-a));
+    border-radius: 999px;
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  /* DIMENSION NAV */
+  .dim-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dim-tab {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dim-tab.active { color: var(--text); border-color: var(--dim-color, var(--accent-a)); background: var(--surface2); }
+  .dim-tab.completed { opacity: 0.7; }
+  .dim-tab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim-color, var(--border)); }
+  .dim-tab.completed .dot { background: var(--dim-color); }
+  .dim-tab[data-dim="A"] { --dim-color: var(--accent-a); }
+  .dim-tab[data-dim="B"] { --dim-color: var(--accent-b); }
+  .dim-tab[data-dim="C"] { --dim-color: var(--accent-c); }
+  .dim-tab[data-dim="D"] { --dim-color: var(--accent-d); }
+
+  /* SECTIONS */
+  .dim-section { display: none; }
+  .dim-section.active { display: block; animation: fadeUp 0.4s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dim-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+
+  .dim-badge.a { color: var(--accent-a); border-color: rgba(79,255,176,0.3); background: rgba(79,255,176,0.07); }
+  .dim-badge.b { color: var(--accent-b); border-color: rgba(123,97,255,0.3); background: rgba(123,97,255,0.07); }
+  .dim-badge.c { color: var(--accent-c); border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.07); }
+  .dim-badge.d { color: var(--accent-d); border-color: rgba(255,209,102,0.3); background: rgba(255,209,102,0.07); }
+
+  .section-title { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 4px; }
+  .section-desc { color: var(--dim); font-size: 0.88rem; font-weight: 300; line-height: 1.6; }
+
+  /* QUESTION CARD */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .q-card:hover { border-color: #353848; }
+  .q-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .q-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  /* Radio / Checkbox groups */
+  .options-grid { display: flex; flex-direction: column; gap: 8px; }
+  .options-grid.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .options-grid.cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  .opt-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--dim);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.86rem;
+    transition: all 0.15s;
+    text-align: left;
+    user-select: none;
+  }
+
+  .opt-btn:hover { border-color: #454860; color: var(--text); }
+  .opt-btn.selected { border-color: var(--sel-color, var(--accent-a)); color: var(--text); background: rgba(79,255,176,0.05); }
+  .opt-btn.selected .opt-indicator { background: var(--sel-color, var(--accent-a)); border-color: var(--sel-color, var(--accent-a)); }
+
+  .opt-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .opt-indicator.square { border-radius: 4px; }
+
+  /* Multi-binary table */
+  .multi-table { width: 100%; border-collapse: collapse; }
+  .multi-table th {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+    padding: 8px;
+    letter-spacing: 0.5px;
+  }
+  .multi-table th:first-child { text-align: left; }
+  .multi-table td {
+    padding: 9px 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--dim);
+    vertical-align: middle;
+  }
+  .multi-table td:first-child { color: var(--text); }
+  .multi-table td:not(:first-child) { text-align: center; }
+  .multi-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .cell-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cell-btn:hover { border-color: #5a5e78; }
+  .cell-btn.selected { background: var(--sel-color, var(--accent-a)); border-color: var(--sel-color, var(--accent-a)); }
+  .cell-btn svg { width: 14px; height: 14px; fill: none; stroke: var(--bg); stroke-width: 2.5; stroke-linecap: round; opacity: 0; transition: opacity 0.15s; }
+  .cell-btn.selected svg { opacity: 1; }
+
+  /* SCORE PANEL */
+  .score-panel {
+    position: sticky;
+    top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .score-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 500; }
+
+  .score-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: var(--score-color, var(--accent-a));
+    transition: color 0.3s;
+  }
+
+  .score-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .score-bar-fill {
+    height: 100%;
+    background: var(--score-color, var(--accent-a));
+    border-radius: 999px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+  .score-caption { font-size: 0.78rem; color: var(--muted); }
+
+  /* ACTIONS */
+  .actions { display: flex; gap: 12px; margin-top: 32px; justify-content: flex-end; }
+
+  .btn {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+  .btn-ghost:hover { border-color: var(--dim); color: var(--text); }
+
+  .btn-primary {
+    background: var(--accent-a);
+    color: var(--bg);
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary.b { background: var(--accent-b); }
+  .btn-primary.c { background: var(--accent-c); }
+  .btn-primary.d { background: var(--accent-d); }
+
+  /* RESULTS */
+  #results-section { display: none; animation: fadeUp 0.5s ease; }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .res-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .res-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 80% at 100% 0%, var(--glow-color), transparent);
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  .res-card.a { --glow-color: var(--accent-a); }
+  .res-card.b { --glow-color: var(--accent-b); }
+  .res-card.c { --glow-color: var(--accent-c); }
+  .res-card.d { --glow-color: var(--accent-d); }
+
+  .res-dim-name { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .res-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .res-card.a .res-score { color: var(--accent-a); }
+  .res-card.b .res-score { color: var(--accent-b); }
+  .res-card.c .res-score { color: var(--accent-c); }
+  .res-card.d .res-score { color: var(--accent-d); }
+
+  .res-bar { height: 4px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+  .res-bar-fill { height: 100%; border-radius: 999px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .res-card.a .res-bar-fill { background: var(--accent-a); }
+  .res-card.b .res-bar-fill { background: var(--accent-b); }
+  .res-card.c .res-bar-fill { background: var(--accent-c); }
+  .res-card.d .res-bar-fill { background: var(--accent-d); }
+
+  .icad-final-card {
+    background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+    border: 1px solid rgba(79,255,176,0.25);
+    border-radius: 18px;
+    padding: 40px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .icad-final-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 0%, rgba(79,255,176,0.08), transparent);
+    pointer-events: none;
+  }
+
+  .icad-label { font-size: 0.8rem; color: var(--accent-a); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; font-weight: 600; }
+  .icad-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 6rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .icad-caption { color: var(--dim); font-size: 0.9rem; margin-bottom: 24px; }
+
+  .interpretation {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .restart-btn {
+    display: block;
+    margin: 0 auto;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 12px 32px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 24px;
+  }
+  .restart-btn:hover { color: var(--text); border-color: var(--dim); }
+
+  @media (max-width: 600px) {
+    .results-grid { grid-template-columns: 1fr; }
+    .options-grid.cols2, .options-grid.cols3 { grid-template-columns: 1fr 1fr; }
+    .dim-nav { gap: 6px; }
+    .dim-tab { font-size: 11px; padding: 7px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="tag">Colombia · ENTIC 2024</div>
+    <h1>Índice de Apropiación<br><span>Digital</span></h1>
+    <p class="subtitle">Responde las preguntas de cada dimensión para calcular tu puntaje ICAD según el modelo metodológico propuesto.</p>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="globalProgress"></div></div>
+  </header>
+
+  <!-- DIM NAV -->
+  <div class="dim-nav">
+    <button class="dim-tab active" data-dim="A" onclick="goTo('A')"><span class="dot"></span>A · Acceso</button>
+    <button class="dim-tab" data-dim="B" onclick="goTo('B')"><span class="dot"></span>B · Competencias</button>
+    <button class="dim-tab" data-dim="C" onclick="goTo('C')"><span class="dot"></span>C · Usos</button>
+    <button class="dim-tab" data-dim="D" onclick="goTo('D')"><span class="dot"></span>D · Diversidad</button>
+  </div>
+
+  <!-- ============================= DIMENSIÓN A ============================= -->
+  <div class="dim-section active" id="sec-A">
+
+    <div class="section-header">
+      <div class="dim-badge a">A</div>
+      <div>
+        <div class="section-title">Acceso e infraestructura</div>
+        <div class="section-desc">Evalúa las condiciones materiales y tecnológicas del hogar que habilitan el uso digital: conectividad, dispositivos y calidad de la conexión.</div>
+      </div>
+    </div>
+
+    <!-- Score panel A -->
+    <div class="score-panel" style="--score-color: var(--accent-a)">
+      <div class="score-label">Puntaje Dimensión A</div>
+      <div class="score-value" id="score-A">—</div>
+      <div class="score-bar"><div class="score-bar-fill" id="bar-A"></div></div>
+      <div class="score-caption">Media aritmética de 8 variables normalizadas · rango [0, 1]</div>
+    </div>
+
+    <!-- A1: Electricidad -->
+    <div class="q-card">
+      <div class="q-label">I.1 · Binaria</div>
+      <div class="q-text">¿La vivienda cuenta con energía eléctrica?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a1',1)"><span class="opt-indicator"></span>Sí</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a1',0)"><span class="opt-indicator"></span>No</button>
+      </div>
+    </div>
+
+    <!-- A2: Dispositivos (computador escritorio, portátil, tableta) -->
+    <div class="q-card">
+      <div class="q-label">II.4 · Múltiple binaria (3 ítems relevantes)</div>
+      <div class="q-text">¿Cuáles de los siguientes dispositivos posee el hogar?</div>
+      <table class="multi-table">
+        <thead><tr><th>Dispositivo</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Computador de escritorio</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Computador portátil</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Tableta</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a2_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- A3: Internet -->
+    <div class="q-card">
+      <div class="q-label">II.7 · Binaria</div>
+      <div class="q-text">¿El hogar tiene conexión a internet?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a3',1)"><span class="opt-indicator"></span>Sí (fijo / móvil)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a3',0)"><span class="opt-indicator"></span>No</button>
+      </div>
+    </div>
+
+    <!-- A4: Calidad conexión -->
+    <div class="q-card">
+      <div class="q-label">II.8 · Ordinal subjetiva</div>
+      <div class="q-text">¿Cómo califica en general el servicio de conexión a internet?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',0.05)"><span class="opt-indicator"></span>Muy malo</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',0.20)"><span class="opt-indicator"></span>Malo</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',0.50)"><span class="opt-indicator"></span>Regular</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',0.80)"><span class="opt-indicator"></span>Bueno</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',1.00)"><span class="opt-indicator"></span>Muy bueno</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a4',0.50)"><span class="opt-indicator"></span>No aplica / NS</button>
+      </div>
+    </div>
+
+    <!-- A5: Velocidad contratada -->
+    <div class="q-card">
+      <div class="q-label">II.9 · Ordinal técnica (min-max)</div>
+      <div class="q-text">¿Cuál es la máxima velocidad de conexión a internet fijo contratada?</div>
+      <div class="options-grid">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',0/8)"><span class="opt-indicator"></span>Menos de 256 kbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',1/8)"><span class="opt-indicator"></span>256 kbps – 2 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',2/8)"><span class="opt-indicator"></span>2 – 10 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',3/8)"><span class="opt-indicator"></span>10 – 30 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',4/8)"><span class="opt-indicator"></span>30 – 100 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',5/8)"><span class="opt-indicator"></span>100 – 300 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',6/8)"><span class="opt-indicator"></span>300 – 600 Mbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',7/8)"><span class="opt-indicator"></span>600 Mbps – 1 Gbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',8/8)"><span class="opt-indicator"></span>Mayor a 1 Gbps</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a5',0.50)"><span class="opt-indicator"></span>No sabe / No responde / No aplica</button>
+      </div>
+    </div>
+
+    <!-- A6: Velocidad adecuada -->
+    <div class="q-card">
+      <div class="q-label">II.10 · Binaria</div>
+      <div class="q-text">¿Considera que la velocidad de conexión a internet de su hogar es adecuada para sus necesidades?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a6',1)"><span class="opt-indicator"></span>Sí</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a6',0)"><span class="opt-indicator"></span>No / No aplica</button>
+      </div>
+    </div>
+
+    <!-- A7: Fallas de conexión -->
+    <div class="q-card">
+      <div class="q-label">II.12 · Ordinal subjetiva (invertida)</div>
+      <div class="q-text">Durante los últimos 12 meses, ¿con qué frecuencia la conexión a internet presentó fallas o problemas?</div>
+      <div class="options-grid">
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a7',1.00)"><span class="opt-indicator"></span>No presentó fallas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a7',0.80)"><span class="opt-indicator"></span>Al menos una vez al año (no cada mes)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a7',0.50)"><span class="opt-indicator"></span>Al menos una vez al mes (no cada semana)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a7',0.20)"><span class="opt-indicator"></span>Al menos una vez a la semana (no cada día)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-a)" onclick="selectRadio(this,'a7',0.00)"><span class="opt-indicator"></span>No tiene internet en el hogar</button>
+      </div>
+    </div>
+
+    <!-- A8: Dispositivos para acceder a internet -->
+    <div class="q-card">
+      <div class="q-label">IV.7 · Múltiple binaria (9 ítems)</div>
+      <div class="q-text">¿Cuáles de los siguientes dispositivos utiliza para acceder a internet?</div>
+      <table class="multi-table">
+        <thead><tr><th>Dispositivo</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Computador de escritorio</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Computador portátil</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Teléfono celular inteligente (Smartphone)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Tableta</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_4',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_4',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Televisor inteligente (Smart TV)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_5',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_5',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Consola para juegos electrónicos</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_6',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_6',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Lector de libros electrónicos (E-reader)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_7',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_7',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Reloj inteligente (smartwatch)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_8',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_8',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Asistente virtual del hogar (Alexa, Google Home…)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_9',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-a)" onclick="selectRow(this,'a8_9',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="goTo('B')">Siguiente: Competencias →</button>
+    </div>
+  </div>
+
+  <!-- ============================= DIMENSIÓN B ============================= -->
+  <div class="dim-section" id="sec-B">
+
+    <div class="section-header">
+      <div class="dim-badge b">B</div>
+      <div>
+        <div class="section-title">Competencias digitales y seguridad</div>
+        <div class="section-desc">Evalúa la autonomía técnica, hábitos de seguridad, privacidad y capacitación formal en entornos digitales.</div>
+      </div>
+    </div>
+
+    <div class="score-panel" style="--score-color: var(--accent-b)">
+      <div class="score-label">Puntaje Dimensión B</div>
+      <div class="score-value" id="score-B">—</div>
+      <div class="score-bar"><div class="score-bar-fill" id="bar-B"></div></div>
+      <div class="score-caption">Media aritmética de 6 variables normalizadas · rango [0, 1]</div>
+    </div>
+
+    <!-- B1: Competencias técnicas -->
+    <div class="q-card">
+      <div class="q-label">IV.5 · Ordinal de autonomía (13 actividades)</div>
+      <div class="q-text">Si tuviera que realizar las siguientes actividades en computador / tableta, ¿cómo respondería?</div>
+      <table class="multi-table">
+        <thead><tr><th>Actividad</th><th>Lo hace</th><th>Pide ayuda</th><th>No lo hace</th></tr></thead>
+        <tbody id="b1-rows">
+          <!-- Generadas por JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- B2: Mecanismos de protección (V.1) -->
+    <div class="q-card">
+      <div class="q-label">V.1 · Múltiple binaria (3 ítems)</div>
+      <div class="q-text">¿Con cuál(es) de los siguientes mecanismos protege la información de sus dispositivos?</div>
+      <table class="multi-table">
+        <thead><tr><th>Mecanismo</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Software de protección (antivirus, firewall…)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Contraseñas seguras (letras + números + caracteres)</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Copias de seguridad (backup) en dispositivos o nube</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b2_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- B3: Prácticas habituales (V.2) -->
+    <div class="q-card">
+      <div class="q-label">V.2 · Múltiple binaria (7 ítems)</div>
+      <div class="q-text">¿Cuáles de las siguientes prácticas adopta habitualmente como usuario de internet?</div>
+      <table class="multi-table">
+        <thead><tr><th>Práctica</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Suministra su clave a otras personas <em style="color:var(--accent-c);font-size:0.8em">(Sí = riesgo)</em></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_1',0)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_1',1)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Cambia contraseñas al menos 2 veces al año</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Cambia frecuentemente claves de redes sociales y correo</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Mantiene actualizado el antivirus</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_4',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_4',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Reporta spam o correo no deseado</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_5',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_5',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Valida seguridad de apps antes de instalarlas</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_6',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_6',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Lee términos y condiciones al descargar una app</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_7',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b3_7',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- B4: Acciones en sitios web (V.3) -->
+    <div class="q-card">
+      <div class="q-label">V.3 · Múltiple binaria (8 ítems)</div>
+      <div class="q-text">¿Cuáles de las siguientes acciones ha realizado al acceder a páginas web en los últimos 12 meses?</div>
+      <table class="multi-table">
+        <thead><tr><th>Acción</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Lee política de privacidad antes de dar info personal</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Restringe acceso a su ubicación geográfica</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Limita acceso a su perfil en redes sociales</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Niega permiso de uso de datos personales para publicidad</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_4',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_4',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Comprueba que el sitio es seguro antes de dar info</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_5',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_5',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Pide a sitios web que eliminen su información personal</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_6',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_6',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Comprueba veracidad de noticias e información en línea</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_7',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_7',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Usa software anti-rastreo de actividades en internet</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_8',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'b4_8',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- B5: Control parental (V.4) -->
+    <div class="q-card">
+      <div class="q-label">V.4 · Binaria</div>
+      <div class="q-text">¿En el hogar se utiliza alguna herramienta digital para controlar los contenidos que pueden ver los menores de edad (control parental)?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-b)" onclick="selectRadio(this,'b5',1)"><span class="opt-indicator"></span>Sí</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-b)" onclick="selectRadio(this,'b5',0)"><span class="opt-indicator"></span>No / No aplica</button>
+      </div>
+    </div>
+
+    <!-- B6: Capacitación (IV.14B) -->
+    <div class="q-card">
+      <div class="q-label">IV.14B · Binaria</div>
+      <div class="q-text">¿Ha recibido capacitación en programas de formación en habilidades y competencias digitales (MINTIC u otras entidades públicas, gobernaciones, alcaldías, cámaras de comercio)?</div>
+      <div class="options-grid cols2">
+        <button class="opt-btn" style="--sel-color:var(--accent-b)" onclick="selectRadio(this,'b6',1)"><span class="opt-indicator"></span>Sí</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-b)" onclick="selectRadio(this,'b6',0)"><span class="opt-indicator"></span>No</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo('A')">← Anterior</button>
+      <button class="btn btn-primary b" onclick="goTo('C')">Siguiente: Usos →</button>
+    </div>
+  </div>
+
+  <!-- ============================= DIMENSIÓN C ============================= -->
+  <div class="dim-section" id="sec-C">
+
+    <div class="section-header">
+      <div class="dim-badge c">C</div>
+      <div>
+        <div class="section-title">Usos transformadores</div>
+        <div class="section-desc">Captura actividades de alto impacto en productividad y bienestar: banca, comercio, educación, empleo, trámites y trabajo digital.</div>
+      </div>
+    </div>
+
+    <div class="score-panel" style="--score-color: var(--accent-c)">
+      <div class="score-label">Puntaje Dimensión C</div>
+      <div class="score-value" id="score-C">—</div>
+      <div class="score-bar"><div class="score-bar-fill" id="bar-C"></div></div>
+      <div class="score-caption">Proporción de 8 usos transformadores realizados · rango [0, 1]</div>
+    </div>
+
+    <!-- C: 8 usos transformadores de IV.10 -->
+    <div class="q-card">
+      <div class="q-label">IV.10 · Múltiple binaria (8 ítems seleccionados)</div>
+      <div class="q-text">Durante los últimos 12 meses, ¿para cuáles de las siguientes actividades ha utilizado internet?</div>
+      <table class="multi-table">
+        <thead><tr><th>Actividad</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Comprar / ordenar productos o servicios</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Vender productos o servicios</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Operaciones bancarias y otros servicios financieros</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Consultar wikis y enciclopedias con fines de aprendizaje</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c4',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c4',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Educación y aprendizaje formal o informal</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c5',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c5',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Buscar empleo o presentar solicitud de empleo</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c6',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c6',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Hacer trámites con entidades públicas</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c7',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c7',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Usar internet por requerimiento de empleo o trabajo independiente</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c8',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-c)" onclick="selectRow(this,'c8',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo('B')">← Anterior</button>
+      <button class="btn btn-primary c" onclick="goTo('D')">Siguiente: Diversidad →</button>
+    </div>
+  </div>
+
+  <!-- ============================= DIMENSIÓN D ============================= -->
+  <div class="dim-section" id="sec-D">
+
+    <div class="section-header">
+      <div class="dim-badge d">D</div>
+      <div>
+        <div class="section-title">Diversidad e intensidad del uso cotidiano</div>
+        <div class="section-desc">Mide la frecuencia, volumen y variedad de las actividades digitales realizadas en el día a día.</div>
+      </div>
+    </div>
+
+    <div class="score-panel" style="--score-color: var(--accent-d)">
+      <div class="score-label">Puntaje Dimensión D</div>
+      <div class="score-value" id="score-D">—</div>
+      <div class="score-bar"><div class="score-bar-fill" id="bar-D"></div></div>
+      <div class="score-caption">Media aritmética de 6 indicadores normalizados · rango [0, 1]</div>
+    </div>
+
+    <!-- D1: Horas de internet -->
+    <div class="q-card">
+      <div class="q-label">IV.6 · Continua (min-max 1–16 h)</div>
+      <div class="q-text">¿En promedio cuántas horas al día dedica al uso de internet?</div>
+      <div class="options-grid cols3">
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(1-1)/15)"><span class="opt-indicator"></span>1 hora</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(2-1)/15)"><span class="opt-indicator"></span>2 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(3-1)/15)"><span class="opt-indicator"></span>3 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(4-1)/15)"><span class="opt-indicator"></span>4 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(5-1)/15)"><span class="opt-indicator"></span>5 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(6-1)/15)"><span class="opt-indicator"></span>6 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(7-1)/15)"><span class="opt-indicator"></span>7 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(8-1)/15)"><span class="opt-indicator"></span>8 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(10-1)/15)"><span class="opt-indicator"></span>9–10 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(12-1)/15)"><span class="opt-indicator"></span>11–12 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(14-1)/15)"><span class="opt-indicator"></span>13–14 horas</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d1',(16-1)/15)"><span class="opt-indicator"></span>15–16 horas</button>
+      </div>
+    </div>
+
+    <!-- D2: Total actividades en internet (IV.10 – conteo de 31) -->
+    <div class="q-card">
+      <div class="q-label">IV.10 · Cardinal (conteo / 31)</div>
+      <div class="q-text">De las 31 actividades posibles en internet que contempla la encuesta ENTIC, ¿aproximadamente cuántas realiza o ha realizado en los últimos 12 meses?</div>
+      <div class="options-grid cols3">
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',0/31)"><span class="opt-indicator"></span>0</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',3/31)"><span class="opt-indicator"></span>1–3</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',6/31)"><span class="opt-indicator"></span>4–6</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',9/31)"><span class="opt-indicator"></span>7–9</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',12/31)"><span class="opt-indicator"></span>10–12</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',16/31)"><span class="opt-indicator"></span>13–16</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',20/31)"><span class="opt-indicator"></span>17–20</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',25/31)"><span class="opt-indicator"></span>21–25</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d2',31/31)"><span class="opt-indicator"></span>26–31</button>
+      </div>
+    </div>
+
+    <!-- D3: Actividades en redes sociales (IV.11 – conteo de 13) -->
+    <div class="q-card">
+      <div class="q-label">IV.11 · Cardinal (conteo / 13)</div>
+      <div class="q-text">¿Para cuántas actividades distintas utiliza las redes sociales? (De un máximo de 13 posibles: comunicación, contenidos, negocios, opinión, trámites, reportes, etc.)</div>
+      <div class="options-grid cols3">
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',0/13)"><span class="opt-indicator"></span>Ninguna</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',2/13)"><span class="opt-indicator"></span>1–2</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',4/13)"><span class="opt-indicator"></span>3–4</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',6/13)"><span class="opt-indicator"></span>5–6</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',8/13)"><span class="opt-indicator"></span>7–8</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',10/13)"><span class="opt-indicator"></span>9–10</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d3',13/13)"><span class="opt-indicator"></span>11–13</button>
+      </div>
+    </div>
+
+    <!-- D4: Frecuencia celular (IV.23) -->
+    <div class="q-card">
+      <div class="q-label">IV.23 · Ordinal de frecuencia</div>
+      <div class="q-text">¿Con qué frecuencia utiliza el teléfono celular?</div>
+      <div class="options-grid">
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d4',1.00)"><span class="opt-indicator"></span>Todos los días de la semana</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d4',0.80)"><span class="opt-indicator"></span>Al menos una vez a la semana (no cada día)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d4',0.50)"><span class="opt-indicator"></span>Al menos una vez al mes (no cada semana)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d4',0.20)"><span class="opt-indicator"></span>Al menos una vez al año (no cada mes)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d4',0.00)"><span class="opt-indicator"></span>No utiliza celular</button>
+      </div>
+    </div>
+
+    <!-- D5: Frecuencia sitios del Estado (IV.14) -->
+    <div class="q-card">
+      <div class="q-label">IV.14 · Ordinal (máximo entre 4 sitios del Estado)</div>
+      <div class="q-text">¿Con qué frecuencia utiliza portales del Estado colombiano (gov.co, datos.gov.co, sitio de alcaldía/gobernación, Urna de Cristal)? Seleccione la frecuencia más alta que aplique.</div>
+      <div class="options-grid">
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d5',1.00)"><span class="opt-indicator"></span>1 o más veces a la semana</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d5',0.80)"><span class="opt-indicator"></span>1 vez al mes</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d5',0.50)"><span class="opt-indicator"></span>1 vez al año</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d5',0.20)"><span class="opt-indicator"></span>No lo utilizo (pero lo conozco)</button>
+        <button class="opt-btn" style="--sel-color:var(--accent-d)" onclick="selectRadio(this,'d5',0.00)"><span class="opt-indicator"></span>No conozco ninguno</button>
+      </div>
+    </div>
+
+    <!-- D6: Actividades en celular (IV.24) -->
+    <div class="q-card">
+      <div class="q-label">IV.24 · Múltiple binaria (7 ítems)</div>
+      <div class="q-text">¿Para cuáles de las siguientes actividades utiliza el teléfono celular?</div>
+      <table class="multi-table">
+        <thead><tr><th>Actividad</th><th>Sí</th><th>No</th></tr></thead>
+        <tbody>
+          <tr><td>Llamadas personales o familiares</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_1',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_1',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Llamadas laborales</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_2',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_2',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Mensajes de texto personales / chat</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_3',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_3',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Navegación en internet</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_4',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_4',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Venta de minutos</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_5',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_5',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Mensajes de texto laborales / chat laboral</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_6',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_6',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+          <tr><td>Entretenimiento</td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_7',1)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+            <td><button class="cell-btn" style="--sel-color:var(--accent-d)" onclick="selectRow(this,'d6_7',0)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="goTo('C')">← Anterior</button>
+      <button class="btn btn-primary d" onclick="calcularICAD()">Calcular ICAD final →</button>
+    </div>
+  </div>
+
+  <!-- ============================= RESULTADOS ============================= -->
+  <div id="results-section">
+    <div style="text-align:center; padding: 20px 0 36px;">
+      <div class="tag">Resultado</div>
+      <h1 style="font-size:clamp(1.8rem,4vw,2.6rem); margin-top:12px">Tu diagnóstico de<br><span>apropiación digital</span></h1>
+    </div>
+
+    <div class="icad-final-card">
+      <div class="icad-label">ICAD Final</div>
+      <div class="icad-number" id="icad-final-num">—</div>
+      <div class="icad-caption">Media geométrica ponderada · ajuste por usos transformadores (α=10%)</div>
+      <div class="interpretation" id="icad-interpret"></div>
+    </div>
+
+    <div class="results-grid">
+      <div class="res-card a">
+        <div class="res-dim-name">A · Acceso e infraestructura <span style="color:var(--muted)">w=0.20</span></div>
+        <div class="res-score" id="res-A">—</div>
+        <div style="font-size:0.8rem; color:var(--dim)" id="desc-A"></div>
+        <div class="res-bar"><div class="res-bar-fill" id="resbar-A" style="width:0%"></div></div>
+      </div>
+      <div class="res-card b">
+        <div class="res-dim-name">B · Competencias y seguridad <span style="color:var(--muted)">w=0.25</span></div>
+        <div class="res-score" id="res-B">—</div>
+        <div style="font-size:0.8rem; color:var(--dim)" id="desc-B"></div>
+        <div class="res-bar"><div class="res-bar-fill" id="resbar-B" style="width:0%"></div></div>
+      </div>
+      <div class="res-card c">
+        <div class="res-dim-name">C · Usos transformadores <span style="color:var(--muted)">w=0.35</span></div>
+        <div class="res-score" id="res-C">—</div>
+        <div style="font-size:0.8rem; color:var(--dim)" id="desc-C"></div>
+        <div class="res-bar"><div class="res-bar-fill" id="resbar-C" style="width:0%"></div></div>
+      </div>
+      <div class="res-card d">
+        <div class="res-dim-name">D · Diversidad e intensidad <span style="color:var(--muted)">w=0.20</span></div>
+        <div class="res-score" id="res-D">—</div>
+        <div style="font-size:0.8rem; color:var(--dim)" id="desc-D"></div>
+        <div class="res-bar"><div class="res-bar-fill" id="resbar-D" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Metodología -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:24px; font-size:0.84rem; color:var(--dim); line-height:1.7">
+      <div style="font-family:'Syne',sans-serif; font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Nota metodológica</div>
+      ICAD = ∏(Dₖ + ε)^wₖ con ε=10⁻⁶ · Ajuste final: min(ICAD × (1 + 0.10 × Vᵢ), 1) donde Vᵢ es la proporción de usos transformadores realizados (aproximación sin variable Pᵢ de percepción). Pesos: wC=0.35, wB=0.25, wA=0.20, wD=0.20.
+    </div>
+
+    <button class="restart-btn" onclick="reiniciar()">↩ Volver a responder</button>
+  </div>
+
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {};
+
+// ─── DIMENSION B: generar filas de IV.5 ──────────────────────────────────────
+const b1Activities = [
+  "Copiar o mover un archivo o carpeta",
+  "Usar copiar y pegar entre documentos o dispositivos",
+  "Enviar correos electrónicos con archivos adjuntos",
+  "Conectar o instalar dispositivos adicionales (impresora, cámara…)",
+  "Usar procesadores de texto (Word, Google Docs…)",
+  "Usar fórmulas matemáticas en hoja de cálculo (Excel, Calc…)",
+  "Crear presentaciones (PowerPoint, Prezi…)",
+  "Transferir archivos entre dispositivos o por internet",
+  "Buscar, descargar, instalar o configurar software / apps",
+  "Utilizar un lenguaje de programación especializado",
+  "Limitar la difusión de datos personales en dispositivos o apps",
+  "Modificar aspectos de seguridad de buscadores",
+  "Crear una página web"
+];
+
+function buildB1() {
+  const tbody = document.getElementById('b1-rows');
+  b1Activities.forEach((act, i) => {
+    const key = `b1_${i+1}`;
+    tbody.innerHTML += `
+      <tr>
+        <td>${act}</td>
+        <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'${key}',1.00)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button></td>
+        <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'${key}',0.50)"><svg viewBox="0 0 16 16"><line x1="6" y1="4" x2="10" y2="12"/><line x1="10" y1="4" x2="6" y2="12"/></svg></button></td>
+        <td><button class="cell-btn" style="--sel-color:var(--accent-b)" onclick="selectRow(this,'${key}',0.00)"><svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg></button></td>
+      </tr>`;
+  });
+}
+buildB1();
+
+// ─── UI INTERACTIONS ──────────────────────────────────────────────────────────
+function selectRadio(btn, key, val) {
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state[key] = val;
+  updateDimScore(key);
+}
+
+function selectRow(btn, key, val) {
+  const row = btn.closest('tr');
+  row.querySelectorAll('.cell-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state[key] = val;
+  updateDimScore(key);
+}
+
+function goTo(dim) {
+  document.querySelectorAll('.dim-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.dim-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + dim).classList.add('active');
+  document.querySelector(`.dim-tab[data-dim="${dim}"]`).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateProgress();
+}
+
+// ─── SCORE CALCULATIONS ───────────────────────────────────────────────────────
+
+function getVal(key, def) {
+  return state[key] !== undefined ? state[key] : def;
+}
+
+function avg(keys, def) {
+  const vals = keys.map(k => getVal(k, def)).filter(v => v !== null);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function calcA() {
+  const a1 = getVal('a1', null);
+  const a2 = (['a2_1','a2_2','a2_3'].map(k => getVal(k, null)).filter(v => v !== null));
+  const I2 = a2.length ? a2.reduce((s,v)=>s+v,0)/3 : null;
+  const a3 = getVal('a3', null);
+  const a4 = getVal('a4', null);
+  const a5 = getVal('a5', null);
+  const a6 = getVal('a6', null);
+  const a7 = getVal('a7', null);
+  const a8vals = Array.from({length:9}, (_,i) => getVal(`a8_${i+1}`, null)).filter(v => v !== null);
+  const I8 = a8vals.length ? a8vals.reduce((s,v)=>s+v,0)/9 : null;
+  const all = [a1, I2, a3, a4, a5, a6, a7, I8].filter(v => v !== null);
+  if (!all.length) return null;
+  return all.reduce((s,v)=>s+v,0) / all.length;
+}
+
+function calcB() {
+  // B1: 13 actividades
+  const b1vals = Array.from({length:13}, (_,i) => getVal(`b1_${i+1}`, null)).filter(v => v !== null);
+  const I1 = b1vals.length ? b1vals.reduce((s,v)=>s+v,0)/b1vals.length : null;
+  // B2: 3 ítems
+  const b2vals = [1,2,3].map(k => getVal(`b2_${k}`, null)).filter(v => v !== null);
+  const I2 = b2vals.length ? b2vals.reduce((s,v)=>s+v,0)/3 : null;
+  // B3: 7 ítems
+  const b3vals = Array.from({length:7},(_,i) => getVal(`b3_${i+1}`, null)).filter(v => v !== null);
+  const I3 = b3vals.length ? b3vals.reduce((s,v)=>s+v,0)/7 : null;
+  // B4: 8 ítems
+  const b4vals = Array.from({length:8},(_,i) => getVal(`b4_${i+1}`, null)).filter(v => v !== null);
+  const I4 = b4vals.length ? b4vals.reduce((s,v)=>s+v,0)/8 : null;
+  const b5 = getVal('b5', null);
+  const b6 = getVal('b6', null);
+  const all = [I1, I2, I3, I4, b5, b6].filter(v => v !== null);
+  if (!all.length) return null;
+  return all.reduce((s,v)=>s+v,0) / all.length;
+}
+
+function calcC() {
+  const cvals = Array.from({length:8},(_,i)=> getVal(`c${i+1}`, null)).filter(v=>v!==null);
+  if (!cvals.length) return null;
+  return cvals.reduce((s,v)=>s+v,0)/8;
+}
+
+function calcD() {
+  const d1 = getVal('d1', null);
+  const d2 = getVal('d2', null);
+  const d3 = getVal('d3', null);
+  const d4 = getVal('d4', null);
+  const d5 = getVal('d5', null);
+  const d6vals = Array.from({length:7},(_,i) => getVal(`d6_${i+1}`, null)).filter(v=>v!==null);
+  const I6 = d6vals.length ? d6vals.reduce((s,v)=>s+v,0)/7 : null;
+  const all = [d1,d2,d3,d4,d5,I6].filter(v=>v!==null);
+  if (!all.length) return null;
+  return all.reduce((s,v)=>s+v,0)/all.length;
+}
+
+function updateDimScore(key) {
+  const dim = key[0].toUpperCase();
+  let score;
+  if (dim === 'A') score = calcA();
+  else if (dim === 'B') score = calcB();
+  else if (dim === 'C') score = calcC();
+  else if (dim === 'D') score = calcD();
+  else return;
+
+  const el = document.getElementById('score-' + dim);
+  const bar = document.getElementById('bar-' + dim);
+  if (score === null) { el.textContent = '—'; bar.style.width = '0%'; return; }
+  el.textContent = score.toFixed(3);
+  bar.style.width = (score * 100) + '%';
+
+  // Mark tab as answered
+  const tab = document.querySelector(`.dim-tab[data-dim="${dim}"]`);
+  if (tab) tab.classList.add('completed');
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const answered = ['A','B','C','D'].filter(d => {
+    if (d==='A') return calcA() !== null;
+    if (d==='B') return calcB() !== null;
+    if (d==='C') return calcC() !== null;
+    if (d==='D') return calcD() !== null;
+  }).length;
+  document.getElementById('globalProgress').style.width = (answered / 4 * 100) + '%';
+}
+
+function calcularICAD() {
+  const DA = calcA() ?? 0;
+  const DB = calcB() ?? 0;
+  const DC = calcC() ?? 0;
+  const DD = calcD() ?? 0;
+
+  const eps = 1e-6;
+  const wA=0.20, wB=0.25, wC=0.35, wD=0.20;
+
+  const icadBase = Math.pow(DA+eps,wA) * Math.pow(DB+eps,wB) * Math.pow(DC+eps,wC) * Math.pow(DD+eps,wD);
+
+  // Vi ≈ proporción de usos transformadores (sin variable Pi)
+  const cvals = Array.from({length:8},(_,i)=> getVal(`c${i+1}`, 0));
+  const Vi = cvals.reduce((s,v)=>s+v,0)/8;
+
+  const alpha = 0.10;
+  const icadFinal = Math.min(icadBase * (1 + alpha * Vi), 1);
+
+  // Show results
+  document.querySelectorAll('.dim-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.dim-tab').forEach(t => t.classList.remove('active'));
+
+  const rs = document.getElementById('results-section');
+  rs.style.display = 'block';
+  setTimeout(() => {
+    rs.style.animation = 'fadeUp 0.5s ease';
+  }, 10);
+
+  // Fill results
+  const fmt = v => v !== null ? v.toFixed(3) : '—';
+  const pct = v => v !== null ? (v*100).toFixed(1)+'%' : '—';
+
+  ['A','B','C','D'].forEach(d => {
+    const sc = d==='A'?DA:d==='B'?DB:d==='C'?DC:DD;
+    document.getElementById('res-'+d).textContent = fmt(sc);
+    document.getElementById('resbar-'+d).style.width = (sc*100)+'%';
+
+    const labels = {
+      A: ['Sin acceso digital','Acceso muy limitado','Acceso básico','Acceso intermedio','Buen acceso','Acceso óptimo'],
+      B: ['Sin competencias','Competencias mínimas','Competencias básicas','Competencias intermedias','Buenas competencias','Competencias avanzadas'],
+      C: ['Sin usos transformadores','Uso transformador muy bajo','Uso transformador bajo','Uso transformador medio','Uso transformador alto','Uso transformador pleno'],
+      D: ['Sin uso cotidiano','Uso muy esporádico','Uso esporádico','Uso moderado','Uso frecuente','Uso intensivo']
+    };
+    const idx = Math.round(sc * 5);
+    document.getElementById('desc-'+d).textContent = labels[d][Math.min(idx,5)];
+  });
+
+  document.getElementById('icad-final-num').textContent = icadFinal.toFixed(3);
+
+  let interp, color;
+  if (icadFinal < 0.20) { interp='Apropiación digital muy baja'; color='#ff6b6b'; }
+  else if (icadFinal < 0.40) { interp='Apropiación digital baja'; color='#ff9f43'; }
+  else if (icadFinal < 0.60) { interp='Apropiación digital media'; color='#ffd166'; }
+  else if (icadFinal < 0.80) { interp='Apropiación digital alta'; color='#4fffb0'; }
+  else { interp='Apropiación digital plena'; color='#7b61ff'; }
+
+  const interpEl = document.getElementById('icad-interpret');
+  interpEl.textContent = interp;
+  interpEl.style.background = color + '22';
+  interpEl.style.color = color;
+  interpEl.style.border = `1px solid ${color}55`;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('globalProgress').style.width = '100%';
+}
+
+function reiniciar() {
+  // Clear state
+  Object.keys(state).forEach(k => delete state[k]);
+  // Clear UI
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.cell-btn').forEach(b => b.classList.remove('selected'));
+  ['A','B','C','D'].forEach(d => {
+    const el = document.getElementById('score-'+d);
+    const bar = document.getElementById('bar-'+d);
+    if (el) { el.textContent='—'; bar.style.width='0%'; }
+  });
+  document.querySelectorAll('.dim-tab').forEach(t => t.classList.remove('completed'));
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('globalProgress').style.width = '0%';
+  goTo('A');
+}
+</script>
+</body>
+</html>
